@@ -2,19 +2,27 @@
 app.py
 ------
 Streamlit demo app for the Spam Email/SMS Classifier.
+Polished UI version — built for live presentations/demos.
 
 Run locally with:
     streamlit run app.py
 """
 
+import time
+import pandas as pd
 import streamlit as st
 import joblib
 from preprocess import clean_text
 
-st.set_page_config(page_title="Spam SMS/Email Classifier", page_icon="📩", layout="centered")
+st.set_page_config(
+    page_title="Spam Shield | AI Message Classifier",
+    page_icon="🛡️",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 # ---------------------------------------------------------------------
-# Load trained model + vectorizer
+# Load trained model + vectorizer + metrics
 # ---------------------------------------------------------------------
 @st.cache_resource
 def load_artifacts():
@@ -25,50 +33,340 @@ def load_artifacts():
     return model, vectorizer, model_name
 
 
+@st.cache_data
+def load_metrics():
+    try:
+        df = pd.read_csv("outputs/model_comparison.csv")
+        return df
+    except Exception:
+        return None
+
+
 model, vectorizer, model_name = load_artifacts()
+metrics_df = load_metrics()
 
 # ---------------------------------------------------------------------
-# UI
+# Custom CSS — theme, hero header, cards, buttons
 # ---------------------------------------------------------------------
-st.title("📩 Spam Email/SMS Classifier")
-st.caption(f"Model in use: **{model_name}** (TF-IDF + ML)")
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cambria&family=Inter:wght@400;500;600;700;800&display=swap');
 
-st.write("Enter a message below and check whether it's **Spam** or **Ham** (not spam).")
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
 
-message = st.text_area("Message", height=150, placeholder="Type or paste an SMS/email message here...")
+    #MainMenu, footer, header {visibility: hidden;}
 
-col1, col2 = st.columns([1, 3])
-with col1:
-    predict_clicked = st.button("Check Message", type="primary")
+    .stApp {
+        background: radial-gradient(circle at 15% 0%, #1f2761 0%, #12153a 45%, #0b0c24 100%);
+    }
 
-if predict_clicked:
-    if not message.strip():
-        st.warning("Please enter a message first.")
-    else:
-        cleaned = clean_text(message)
-        vec = vectorizer.transform([cleaned])
-        pred = model.predict(vec)[0]
+    .hero {
+        padding: 2.6rem 2.2rem 2.2rem 2.2rem;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(59,91,219,0.28) 0%, rgba(30,39,97,0.55) 100%);
+        border: 1px solid rgba(255,255,255,0.08);
+        margin-bottom: 1.8rem;
+    }
+    .hero-kicker {
+        color: #9db4ff;
+        font-weight: 700;
+        letter-spacing: 3px;
+        font-size: 0.78rem;
+        margin-bottom: 0.4rem;
+    }
+    .hero-title {
+        color: #ffffff;
+        font-size: 2.6rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 0.5rem;
+    }
+    .hero-sub {
+        color: #c9d3f5;
+        font-size: 1.02rem;
+        max-width: 700px;
+    }
 
-        # get confidence if the model supports probability estimates
-        confidence = None
-        if hasattr(model, "predict_proba"):
-            proba = model.predict_proba(vec)[0]
-            confidence = max(proba) * 100
+    .badge-row { margin-top: 1.1rem; }
+    .badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.08);
+        color: #dfe6ff;
+        border: 1px solid rgba(255,255,255,0.14);
+        padding: 0.3rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        margin-right: 0.5rem;
+        font-weight: 500;
+    }
 
-        if pred == 1:
-            st.error("🚨 This message looks like **SPAM**.")
+    .glass-card {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.09);
+        border-radius: 18px;
+        padding: 1.6rem 1.8rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .section-label {
+        color: #9db4ff;
+        font-weight: 700;
+        font-size: 0.78rem;
+        letter-spacing: 2px;
+        margin-bottom: 0.6rem;
+    }
+
+    .stTextArea textarea {
+        background: rgba(255,255,255,0.06) !important;
+        color: #f3f5ff !important;
+        border: 1px solid rgba(255,255,255,0.15) !important;
+        border-radius: 12px !important;
+        font-size: 1rem !important;
+    }
+    .stTextArea textarea::placeholder { color: #8992b8 !important; }
+
+    div[data-testid="stButton"] button {
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 0.55rem 1.4rem;
+        border: none;
+        transition: transform 0.12s ease;
+    }
+    div[data-testid="stButton"] button:hover { transform: translateY(-1px); }
+
+    .example-btn button {
+        background: rgba(255,255,255,0.07) !important;
+        color: #dfe6ff !important;
+        border: 1px solid rgba(255,255,255,0.15) !important;
+        font-weight: 500 !important;
+        font-size: 0.85rem !important;
+    }
+
+    .result-card {
+        border-radius: 18px;
+        padding: 1.6rem 1.9rem;
+        margin-top: 1rem;
+        animation: fadeIn 0.4s ease;
+    }
+    .result-spam {
+        background: linear-gradient(135deg, rgba(214,69,69,0.22), rgba(214,69,69,0.06));
+        border: 1px solid rgba(214,69,69,0.45);
+    }
+    .result-ham {
+        background: linear-gradient(135deg, rgba(27,156,85,0.22), rgba(27,156,85,0.06));
+        border: 1px solid rgba(27,156,85,0.45);
+    }
+    .result-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.2rem; }
+    .result-spam .result-title { color: #ff8080; }
+    .result-ham .result-title { color: #5be0a0; }
+    .result-sub { color: #d9def0; font-size: 0.92rem; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .metric-box {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        padding: 1rem 0.5rem;
+        text-align: center;
+    }
+    .metric-value { font-size: 1.6rem; font-weight: 800; color: #ffffff; }
+    .metric-label { font-size: 0.72rem; color: #9db4ff; font-weight: 600; letter-spacing: 1px; }
+
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #12153a 0%, #0b0c24 100%);
+        border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    section[data-testid="stSidebar"] * { color: #dfe6ff; }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------
+# Sidebar — project & model info
+# ---------------------------------------------------------------------
+with st.sidebar:
+    st.markdown("### 🛡️ Spam Shield")
+    st.caption("AI-powered SMS/Email spam detector")
+    st.divider()
+
+    st.markdown("**Active Model**")
+    st.markdown(f"`{model_name}`")
+
+    st.markdown("**Pipeline**")
+    st.markdown("Text Cleaning → TF-IDF → ML Classifier")
+
+    if metrics_df is not None:
+        st.divider()
+        st.markdown("**Model Performance**")
+        best_row = metrics_df.sort_values("F1", ascending=False).iloc[0]
+        st.metric("Accuracy", f"{best_row['Accuracy']*100:.1f}%")
+        st.metric("F1-Score", f"{best_row['F1']*100:.1f}%")
+        with st.expander("Compare all models"):
+            st.dataframe(
+                metrics_df.set_index("Model").style.format("{:.2%}"),
+                use_container_width=True,
+            )
+
+    st.divider()
+    st.markdown("**Tech Stack**")
+    st.markdown("Python · Scikit-learn · TF-IDF · Streamlit")
+
+    st.divider()
+    st.caption("B.Tech Major Project — AI & ML")
+    st.caption("Indresh Shukla · Shiv Kumar Tiwari")
+
+# ---------------------------------------------------------------------
+# Hero header
+# ---------------------------------------------------------------------
+st.markdown(f"""
+<div class="hero">
+    <div class="hero-kicker">AI · NLP · MACHINE LEARNING</div>
+    <div class="hero-title">🛡️ Spam Shield</div>
+    <div class="hero-sub">
+        An intelligent message classifier that detects spam SMS and emails in real time
+        using TF-IDF feature extraction and machine learning — trained, evaluated, and
+        deployed end-to-end.
+    </div>
+    <div class="badge-row">
+        <span class="badge">⚙️ Model: {model_name}</span>
+        <span class="badge">⚡ Real-time prediction</span>
+        <span class="badge">🌐 Live &amp; deployed</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------
+# Main layout
+# ---------------------------------------------------------------------
+left, right = st.columns([2.1, 1], gap="large")
+
+if "message_text" not in st.session_state:
+    st.session_state.message_text = ""
+
+EXAMPLES = {
+    "✅ Try a normal message": "Hey, are we still meeting for lunch at 1pm today?",
+    "🚨 Try a spam message": "Congratulations! You have WON a free iPhone 15! Click here to claim your prize now!",
+    "🚨 Try a phishing SMS": "URGENT: Your bank account has been suspended. Verify your details immediately at this link.",
+}
+
+with left:
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">MESSAGE INPUT</div>', unsafe_allow_html=True)
+
+    message = st.text_area(
+        "Message",
+        value=st.session_state.message_text,
+        height=150,
+        placeholder="Type or paste an SMS/email message here...",
+        label_visibility="collapsed",
+    )
+
+    st.markdown("<div style='height:0.3rem'></div>", unsafe_allow_html=True)
+    cols = st.columns(len(EXAMPLES))
+    for c, (label, text) in zip(cols, EXAMPLES.items()):
+        with c:
+            st.markdown('<div class="example-btn">', unsafe_allow_html=True)
+            if st.button(label, key=label, use_container_width=True):
+                st.session_state.message_text = text
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+    predict_clicked = st.button("🔍 Analyze Message", type="primary", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if predict_clicked:
+        if not message.strip():
+            st.warning("Please enter a message first.")
         else:
-            st.success("✅ This message looks like **HAM** (not spam).")
+            with st.spinner("Analyzing message..."):
+                time.sleep(0.4)
+                cleaned = clean_text(message)
+                vec = vectorizer.transform([cleaned])
+                pred = model.predict(vec)[0]
 
-        if confidence is not None:
-            st.write(f"Confidence: **{confidence:.1f}%**")
+                confidence = None
+                if hasattr(model, "predict_proba"):
+                    proba = model.predict_proba(vec)[0]
+                    confidence = max(proba) * 100
 
-        with st.expander("See cleaned text used for prediction"):
-            st.code(cleaned if cleaned else "(empty after cleaning)")
+            if pred == 1:
+                st.markdown(f"""
+                <div class="result-card result-spam">
+                    <div class="result-title">🚨 SPAM DETECTED</div>
+                    <div class="result-sub">This message shows strong characteristics of spam content.</div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div class="result-card result-ham">
+                    <div class="result-title">✅ LEGITIMATE MESSAGE</div>
+                    <div class="result-sub">This message looks like a normal, safe communication (Ham).</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-st.divider()
+            if confidence is not None:
+                st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+                st.progress(int(confidence), text=f"Model confidence: {confidence:.1f}%")
+
+            with st.expander("🔬 See cleaned text used for prediction"):
+                st.code(cleaned if cleaned else "(empty after cleaning)")
+
+with right:
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">HOW IT WORKS</div>', unsafe_allow_html=True)
+    steps = [
+        ("1", "Text Cleaning", "Lowercase, remove URLs, punctuation & stopwords"),
+        ("2", "TF-IDF Vectorization", "Convert text into numeric feature vectors"),
+        ("3", "ML Prediction", f"{model_name} classifies the message"),
+        ("4", "Instant Result", "Spam / Ham shown with confidence score"),
+    ]
+    for num, title, desc in steps:
+        st.markdown(f"""
+        <div style="display:flex; gap:0.8rem; margin-bottom:0.9rem; align-items:flex-start;">
+            <div style="background:#3B5BDB; color:white; width:26px; height:26px; border-radius:50%;
+                        display:flex; align-items:center; justify-content:center; font-weight:700;
+                        font-size:0.8rem; flex-shrink:0;">{num}</div>
+            <div>
+                <div style="color:#fff; font-weight:600; font-size:0.9rem;">{title}</div>
+                <div style="color:#a9b2d9; font-size:0.78rem;">{desc}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if metrics_df is not None:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">MODEL SNAPSHOT</div>', unsafe_allow_html=True)
+        best_row = metrics_df.sort_values("F1", ascending=False).iloc[0]
+        m1, m2 = st.columns(2)
+        with m1:
+            st.markdown(f"""<div class="metric-box"><div class="metric-value">{best_row['Accuracy']*100:.0f}%</div>
+            <div class="metric-label">ACCURACY</div></div>""", unsafe_allow_html=True)
+        with m2:
+            st.markdown(f"""<div class="metric-box"><div class="metric-value">{best_row['Precision']*100:.0f}%</div>
+            <div class="metric-label">PRECISION</div></div>""", unsafe_allow_html=True)
+        st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+        m3, m4 = st.columns(2)
+        with m3:
+            st.markdown(f"""<div class="metric-box"><div class="metric-value">{best_row['Recall']*100:.0f}%</div>
+            <div class="metric-label">RECALL</div></div>""", unsafe_allow_html=True)
+        with m4:
+            st.markdown(f"""<div class="metric-box"><div class="metric-value">{best_row['F1']*100:.0f}%</div>
+            <div class="metric-label">F1-SCORE</div></div>""", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 st.caption(
-    "Note: This demo is trained on a sample dataset built for this project. "
+    "⚠️ Note: This demo is trained on a sample dataset built for this project. "
     "For production-grade accuracy, retrain using the full real-world "
     "SMS Spam Collection dataset (see README.md)."
 )
