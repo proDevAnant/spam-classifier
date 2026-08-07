@@ -321,7 +321,7 @@ with st.sidebar:
         with st.expander("Compare all models"):
             st.dataframe(
                 metrics_df.set_index("Model").style.format("{:.2%}"),
-                use_container_width=True,
+                width="stretch",
             )
 
     st.divider()
@@ -383,13 +383,13 @@ with left:
     for c, (label, text) in zip(cols, EXAMPLES.items()):
         with c:
             st.markdown('<div class="example-btn">', unsafe_allow_html=True)
-            if st.button(label, key=label, use_container_width=True):
+            if st.button(label, key=label, width="stretch"):
                 st.session_state.message_text = text
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
-    predict_clicked = st.button("🔍 Analyze Message", type="primary", use_container_width=True)
+    predict_clicked = st.button("🔍 Analyze Message", type="primary", width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
 
     if predict_clicked:
