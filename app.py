@@ -58,16 +58,46 @@ st.markdown("""
 
     #MainMenu, footer, header {visibility: hidden;}
 
+    /* ---------- Animated 3D background ---------- */
     .stApp {
         background: radial-gradient(circle at 15% 0%, #1f2761 0%, #12153a 45%, #0b0c24 100%);
+        position: relative;
+        overflow-x: hidden;
+    }
+    .orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(70px);
+        opacity: 0.35;
+        z-index: 0;
+        pointer-events: none;
+    }
+    .orb1 { width: 420px; height: 420px; background: #3B5BDB; top: -120px; right: -100px; animation: floatA 14s ease-in-out infinite; }
+    .orb2 { width: 340px; height: 340px; background: #7c4dff; bottom: -100px; left: -80px; animation: floatB 17s ease-in-out infinite; }
+    .orb3 { width: 260px; height: 260px; background: #1B9C55; top: 45%; right: 10%; opacity: 0.18; animation: floatA 20s ease-in-out infinite reverse; }
+    @keyframes floatA {
+        0%, 100% { transform: translate(0,0) scale(1); }
+        50% { transform: translate(-30px, 40px) scale(1.08); }
+    }
+    @keyframes floatB {
+        0%, 100% { transform: translate(0,0) scale(1); }
+        50% { transform: translate(40px, -30px) scale(1.1); }
     }
 
+    /* ---------- Hero with 3D depth ---------- */
     .hero {
+        position: relative;
+        z-index: 1;
         padding: 2.6rem 2.2rem 2.2rem 2.2rem;
-        border-radius: 20px;
-        background: linear-gradient(135deg, rgba(59,91,219,0.28) 0%, rgba(30,39,97,0.55) 100%);
-        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 22px;
+        background: linear-gradient(135deg, rgba(59,91,219,0.32) 0%, rgba(30,39,97,0.6) 100%);
+        border: 1px solid rgba(255,255,255,0.1);
         margin-bottom: 1.8rem;
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.15) inset,
+            0 20px 45px rgba(0,0,0,0.45),
+            0 2px 10px rgba(59,91,219,0.3);
+        transform: perspective(1000px) rotateX(0.5deg);
     }
     .hero-kicker {
         color: #9db4ff;
@@ -78,10 +108,19 @@ st.markdown("""
     }
     .hero-title {
         color: #ffffff;
-        font-size: 2.6rem;
+        font-size: 2.7rem;
         font-weight: 800;
         line-height: 1.1;
         margin-bottom: 0.5rem;
+        text-shadow: 0 4px 18px rgba(59,91,219,0.55);
+    }
+    .hero-title .shield-icon {
+        display: inline-block;
+        animation: pulseGlow 2.4s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+        0%, 100% { filter: drop-shadow(0 0 4px rgba(157,180,255,0.4)); transform: scale(1); }
+        50% { filter: drop-shadow(0 0 20px rgba(157,180,255,0.9)); transform: scale(1.08); }
     }
     .hero-sub {
         color: #c9d3f5;
@@ -92,22 +131,38 @@ st.markdown("""
     .badge-row { margin-top: 1.1rem; }
     .badge {
         display: inline-block;
-        background: rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.09);
         color: #dfe6ff;
-        border: 1px solid rgba(255,255,255,0.14);
-        padding: 0.3rem 0.85rem;
+        border: 1px solid rgba(255,255,255,0.16);
+        padding: 0.32rem 0.9rem;
         border-radius: 999px;
         font-size: 0.8rem;
         margin-right: 0.5rem;
         font-weight: 500;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        transition: transform 0.2s ease;
     }
+    .badge:hover { transform: translateY(-2px); }
 
+    /* ---------- 3D glass cards ---------- */
     .glass-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.09);
-        border-radius: 18px;
+        position: relative;
+        z-index: 1;
+        background: linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
         padding: 1.6rem 1.8rem;
         margin-bottom: 1.2rem;
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.12) inset,
+            0 14px 34px rgba(0,0,0,0.4);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .glass-card:hover {
+        transform: perspective(900px) rotateX(1.5deg) translateY(-4px);
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.16) inset,
+            0 22px 48px rgba(0,0,0,0.5);
     }
 
     .section-label {
@@ -124,17 +179,28 @@ st.markdown("""
         border: 1px solid rgba(255,255,255,0.15) !important;
         border-radius: 12px !important;
         font-size: 1rem !important;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.3) inset !important;
     }
     .stTextArea textarea::placeholder { color: #8992b8 !important; }
-
-    div[data-testid="stButton"] button {
-        border-radius: 10px;
-        font-weight: 700;
-        padding: 0.55rem 1.4rem;
-        border: none;
-        transition: transform 0.12s ease;
+    .stTextArea textarea:focus {
+        border: 1px solid #3B5BDB !important;
+        box-shadow: 0 0 0 3px rgba(59,91,219,0.35) !important;
     }
-    div[data-testid="stButton"] button:hover { transform: translateY(-1px); }
+
+    /* ---------- 3D press-down buttons ---------- */
+    div[data-testid="stButton"] button {
+        border-radius: 12px;
+        font-weight: 700;
+        padding: 0.6rem 1.4rem;
+        border: none;
+        box-shadow: 0 6px 0 rgba(0,0,0,0.35), 0 10px 20px rgba(0,0,0,0.35);
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    div[data-testid="stButton"] button:hover { transform: translateY(-2px); }
+    div[data-testid="stButton"] button:active {
+        transform: translateY(4px);
+        box-shadow: 0 2px 0 rgba(0,0,0,0.35), 0 4px 10px rgba(0,0,0,0.3);
+    }
 
     .example-btn button {
         background: rgba(255,255,255,0.07) !important;
@@ -142,39 +208,78 @@ st.markdown("""
         border: 1px solid rgba(255,255,255,0.15) !important;
         font-weight: 500 !important;
         font-size: 0.85rem !important;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.25), 0 8px 14px rgba(0,0,0,0.3) !important;
     }
 
+    /* ---------- Result cards: pop + glow + confetti/shake ---------- */
     .result-card {
-        border-radius: 18px;
-        padding: 1.6rem 1.9rem;
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        padding: 1.7rem 1.9rem;
         margin-top: 1rem;
-        animation: fadeIn 0.4s ease;
+        animation: popIn 0.5s cubic-bezier(.26,1.4,.44,1);
+    }
+    @keyframes popIn {
+        0% { opacity: 0; transform: scale(0.85) translateY(10px); }
+        60% { opacity: 1; transform: scale(1.03) translateY(-2px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
     }
     .result-spam {
-        background: linear-gradient(135deg, rgba(214,69,69,0.22), rgba(214,69,69,0.06));
-        border: 1px solid rgba(214,69,69,0.45);
+        background: linear-gradient(135deg, rgba(214,69,69,0.26), rgba(214,69,69,0.07));
+        border: 1px solid rgba(214,69,69,0.5);
+        box-shadow: 0 0 0 rgba(214,69,69,0.5), 0 16px 36px rgba(214,69,69,0.25);
+        animation: popIn 0.5s cubic-bezier(.26,1.4,.44,1), shake 0.5s ease 0.5s, alarmGlow 1.6s ease-in-out 1s infinite;
     }
     .result-ham {
-        background: linear-gradient(135deg, rgba(27,156,85,0.22), rgba(27,156,85,0.06));
-        border: 1px solid rgba(27,156,85,0.45);
+        background: linear-gradient(135deg, rgba(27,156,85,0.26), rgba(27,156,85,0.07));
+        border: 1px solid rgba(27,156,85,0.5);
+        box-shadow: 0 16px 36px rgba(27,156,85,0.25);
+        animation: popIn 0.5s cubic-bezier(.26,1.4,.44,1), safeGlow 1.8s ease-in-out 0.5s infinite;
     }
-    .result-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.2rem; }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+    }
+    @keyframes alarmGlow {
+        0%, 100% { box-shadow: 0 16px 36px rgba(214,69,69,0.25); }
+        50% { box-shadow: 0 16px 46px rgba(214,69,69,0.55); }
+    }
+    @keyframes safeGlow {
+        0%, 100% { box-shadow: 0 16px 36px rgba(27,156,85,0.25); }
+        50% { box-shadow: 0 16px 46px rgba(27,156,85,0.5); }
+    }
+    .result-title { font-size: 1.55rem; font-weight: 800; margin-bottom: 0.2rem; }
     .result-spam .result-title { color: #ff8080; }
     .result-ham .result-title { color: #5be0a0; }
     .result-sub { color: #d9def0; font-size: 0.92rem; }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(6px); }
-        to { opacity: 1; transform: translateY(0); }
+    /* confetti burst for Ham */
+    .confetti-piece {
+        position: absolute;
+        top: -12px;
+        font-size: 1.1rem;
+        animation: confettiFall 1.6s ease-in forwards;
+        z-index: 2;
+    }
+    @keyframes confettiFall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(140px) rotate(280deg); opacity: 0; }
     }
 
     .metric-box {
-        background: rgba(255,255,255,0.05);
+        background: linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
         border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 14px;
+        border-radius: 16px;
         padding: 1rem 0.5rem;
         text-align: center;
+        box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+        transition: transform 0.2s ease;
     }
+    .metric-box:hover { transform: translateY(-3px) scale(1.02); }
     .metric-value { font-size: 1.6rem; font-weight: 800; color: #ffffff; }
     .metric-label { font-size: 0.72rem; color: #9db4ff; font-weight: 600; letter-spacing: 1px; }
 
@@ -187,6 +292,10 @@ st.markdown("""
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 </style>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
@@ -229,7 +338,7 @@ with st.sidebar:
 st.markdown(f"""
 <div class="hero">
     <div class="hero-kicker">AI · NLP · MACHINE LEARNING</div>
-    <div class="hero-title">🛡️ Spam Shield</div>
+    <div class="hero-title"><span class="shield-icon">🛡️</span> Spam Shield</div>
     <div class="hero-sub">
         An intelligent message classifier that detects spam SMS and emails in real time
         using TF-IDF feature extraction and machine learning — trained, evaluated, and
@@ -306,8 +415,16 @@ with left:
                 </div>
                 """, unsafe_allow_html=True)
             else:
+                confetti_emojis = ["🎉", "✨", "🎊", "⭐", "💚", "✨", "🎉", "⭐", "💚", "🎊"]
+                confetti_positions = [4, 14, 24, 34, 44, 54, 64, 74, 84, 94]
+                confetti_html = "".join(
+                    f'<span class="confetti-piece" style="left:{pos}%; '
+                    f'animation-delay:{i*0.06:.2f}s;">{emoji}</span>'
+                    for i, (emoji, pos) in enumerate(zip(confetti_emojis, confetti_positions))
+                )
                 st.markdown(f"""
                 <div class="result-card result-ham">
+                    {confetti_html}
                     <div class="result-title">✅ LEGITIMATE MESSAGE</div>
                     <div class="result-sub">This message looks like a normal, safe communication (Ham).</div>
                 </div>
